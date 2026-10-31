@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { api, clearToken } from './api'
+import { api } from './api'
 import type { AuthUser } from './api'
 
 const AuthContext = createContext<{
@@ -21,11 +21,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('university_token')
-    if (!token) {
-      setLoading(false)
-      return
-    }
     api
       .me()
       .then(setUser)
@@ -38,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
-    clearToken()
+    api.logout().catch(() => {})
     setUser(null)
   }, [])
 

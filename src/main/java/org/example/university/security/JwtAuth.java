@@ -6,17 +6,18 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -43,6 +44,10 @@ public class JwtAuth extends OncePerRequestFilter {
         }
     }
 
+    public long getExpirationMs() {
+        return expirationMs;
+    }
+
     public String createToken(Authentication authentication) {
         String role = authentication.getAuthorities().iterator().next().getAuthority();
         Date now = new Date();
@@ -59,9 +64,15 @@ public class JwtAuth extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (header != null && header.startsWith("Bearer ")) {
-            parse(header.substring(7)).ifPresent(user -> {
+        String token = request.getCookies() == null
+                ? null
+                : Arrays.stream(request.getCookies())
+                        .filter(c -> "access_token".equals(c.getName()))
+                        .map(Cookie::getValue)
+                        .findFirst()
+                        .orElse(null);
+        if (token != null) {
+            parse(token).ifPresent(user -> {
                 var auth = new UsernamePasswordAuthenticationToken(
                         user.username, null, List.of(new SimpleGrantedAuthority(user.role)));
                 SecurityContextHolder.getContext().setAuthentication(auth);
