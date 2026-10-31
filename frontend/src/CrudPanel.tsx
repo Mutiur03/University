@@ -73,22 +73,33 @@ export function CrudPanel({
   }
 
   return (
-    <div className="space-y-8">
-      <header>
-        <p className="text-xs font-medium uppercase tracking-widest text-accent">Directory</p>
-        <h1 className="font-serif text-3xl font-semibold tracking-tight text-ink">{title}</h1>
+    <div>
+      <header className="page-header">
+        <div>
+          <p className="eyebrow">Directory / {basePath.split('/').pop()}</p>
+          <h1 className="page-title">{title}</h1>
+          <p className="page-subtitle">
+            Keep this part of the university directory clear, current, and easy to trust.
+          </p>
+        </div>
+        <div className="record-count" aria-label={`${rows.length} records`}>
+          <strong>{String(rows.length).padStart(2, '0')}</strong>
+          <span>records filed</span>
+        </div>
       </header>
 
-      <section className="rounded-lg border border-line bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-ink">
-          {editId != null ? `Edit record #${editId}` : 'New record'}
-        </h2>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="editor-panel" aria-labelledby="editor-heading">
+        <div className="editor-heading">
+          <h2 id="editor-heading">{editId != null ? `Edit record #${editId}` : 'File a new record'}</h2>
+          <span>{editId != null ? 'Editing mode' : 'New entry'}</span>
+        </div>
+        <form onSubmit={onSubmit}>
+          <div className="field-grid">
             {fields.map((f) => (
-              <label key={f.key} className="block text-sm font-medium text-muted">
+              <label key={f.key} className="form-label" htmlFor={`field-${f.key}`}>
                 {f.label}
                 <input
+                  id={`field-${f.key}`}
                   className={inputClass}
                   value={form[f.key] ?? ''}
                   required={f.required !== false}
@@ -98,13 +109,13 @@ export function CrudPanel({
             ))}
           </div>
           {error && (
-            <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+            <p className="panel-error" role="alert">
               {error}
             </p>
           )}
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="editor-actions">
             <button type="submit" className={btnPrimary}>
-              {editId != null ? 'Save changes' : 'Add record'}
+              {editId != null ? 'Save changes' : 'File record'}
             </button>
             {editId != null && (
               <button type="button" className={btnSecondary} onClick={cancelEdit}>
@@ -115,38 +126,39 @@ export function CrudPanel({
         </form>
       </section>
 
-      <section className="overflow-hidden rounded-lg border border-line bg-white shadow-sm">
+      <section className="table-panel" aria-label={`${title} records`}>
         {loading ? (
-          <p className="px-6 py-10 text-sm text-muted">Loading records…</p>
+          <p className="empty-state">Loading records…</p>
         ) : rows.length === 0 ? (
-          <p className="px-6 py-10 text-sm text-muted">No records yet.</p>
+          <p className="empty-state">No records yet. File the first entry above.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-line bg-stone-50/80">
+          <div className="table-scroll">
+            <table className="records-table">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-muted">ID</th>
+                  <th scope="col">ID</th>
                   {fields.map((f) => (
-                    <th key={f.key} className="px-4 py-3 font-semibold text-muted">
+                    <th key={f.key} scope="col">
                       {f.label}
                     </th>
                   ))}
-                  <th className="px-4 py-3 text-right font-semibold text-muted">Actions</th>
+                  <th scope="col">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className="hover:bg-stone-50/60">
-                    <td className="px-4 py-3 tabular-nums text-muted">{row.id}</td>
+                    <td className="record-id">{row.id}</td>
                     {fields.map((f) => (
-                      <td key={f.key} className="px-4 py-3 text-ink">
+                      <td key={f.key}>
                         {String(row[f.key] ?? '') || '—'}
                       </td>
                     ))}
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <td>
                       <button
                         type="button"
-                        className="mr-3 text-sm font-medium text-brand hover:underline"
+                        className="button button-secondary"
+                        style={{ marginRight: '.5rem', minHeight: '2rem', padding: '.35rem .6rem', fontSize: '.68rem' }}
                         onClick={() => {
                           setEditId(row.id!)
                           setForm(

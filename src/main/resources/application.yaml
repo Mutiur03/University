@@ -2,9 +2,9 @@ spring:
   application:
     name: University
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5434/db
-    username: Mutiur
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5434/db}
+    username: ${SPRING_DATASOURCE_USERNAME:Mutiur}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -16,5 +16,5 @@ server:
 
 app:
   jwt:
-    secret: w456b354yv45h5bbhe56bthrdbhdfg
-    expiration-ms: 86400000
+    secret: ${APP_JWT_SECRET:w456b354yv45h5bbhe56bthrdbhdfg}
+    expiration-ms: ${APP_JWT_EXPIRATION_MS:86400000}

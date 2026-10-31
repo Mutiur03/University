@@ -23,8 +23,10 @@ function roleName(role: Role) {
 
 function LoadingScreen() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface">
-      <p className="text-sm text-muted">Loading…</p>
+    <div className="auth-layout">
+      <div className="auth-form-wrap">
+        <p className="data-label">Loading university records…</p>
+      </div>
     </div>
   )
 }
@@ -53,29 +55,28 @@ function Login() {
   }
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-2">
-      <div className="flex flex-col justify-between bg-brand px-8 py-10 text-white lg:px-14 lg:py-16">
+    <div className="auth-layout">
+      <div className="auth-poster">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/70">Internal system</p>
-          <h1 className="mt-4 font-serif text-4xl font-semibold leading-tight lg:text-5xl">
-            University
-            <span className="block text-white/90">Records office</span>
-          </h1>
+          <p className="eyebrow">Registrar’s office / 2026</p>
+          <h1 className="auth-title">The people<br />behind <em>the campus.</em></h1>
+          <p className="auth-copy">
+            A quiet place to keep the university directory accurate, current, and useful.
+          </p>
         </div>
-        <p className="max-w-md text-sm leading-relaxed text-white/75">
-          Manage administrators, faculty, and student directory entries. Access is limited by your assigned role.
-        </p>
+        <p className="data-label">Private directory · role-based access</p>
       </div>
 
-      <div className="flex items-center justify-center px-6 py-12 lg:px-16">
-        <div className="w-full max-w-sm">
-          <h2 className="font-serif text-2xl font-semibold text-ink">Sign in</h2>
-          <p className="mt-2 text-sm text-muted">Use your university account credentials.</p>
+      <div className="auth-form-wrap">
+        <div className="auth-form">
+          <h2>Welcome back.</h2>
+          <p className="form-intro">Sign in with your university account.</p>
 
-          <form onSubmit={submit} className="mt-8 space-y-5">
-            <label className="block text-sm font-medium text-muted">
+          <form onSubmit={submit} className="form-stack">
+            <label className="form-label" htmlFor="username">
               Username
               <input
+                id="username"
                 className={inputClass}
                 autoComplete="username"
                 value={username}
@@ -83,9 +84,10 @@ function Login() {
                 required
               />
             </label>
-            <label className="block text-sm font-medium text-muted">
+            <label className="form-label" htmlFor="password">
               Password
               <input
+                id="password"
                 type="password"
                 className={inputClass}
                 autoComplete="current-password"
@@ -95,7 +97,7 @@ function Login() {
               />
             </label>
             {error && (
-              <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+              <p className="auth-error" role="alert">
                 {error}
               </p>
             )}
@@ -104,7 +106,7 @@ function Login() {
             </button>
           </form>
 
-          <p className="mt-8 border-t border-line pt-6 text-xs leading-relaxed text-muted">
+          <p className="demo-note">
             Demo: admin / admin123 · teacher / teacher123 · student / student123
           </p>
         </div>
@@ -121,41 +123,41 @@ function RequireAuth() {
   const links = nav.filter((item) => item.roles.includes(user.role))
 
   return (
-    <div className="flex min-h-screen bg-surface">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-white">
-        <div className="border-b border-line px-5 py-6">
-          <p className="text-xs font-medium uppercase tracking-widest text-accent">University</p>
-          <p className="font-serif text-lg font-semibold text-ink">Records</p>
+    <div className="app-shell">
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <p className="brand-mark">University / Records</p>
+          <p className="brand-name">Registrar’s desk</p>
         </div>
-        <nav className="flex-1 space-y-1 p-3" aria-label="Sections">
+        <nav className="sidebar-nav" aria-label="Directory sections">
+          <span className="nav-label data-label">Directories</span>
           {links.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                [
-                  'block rounded-md px-3 py-2.5 text-sm font-medium transition',
-                  isActive
-                    ? 'bg-brand/10 text-brand'
-                    : 'text-muted hover:bg-stone-100 hover:text-ink',
-                ].join(' ')
+                `nav-link${isActive ? ' active' : ''}`
               }
             >
+              <span className="nav-index">{String(links.indexOf(item) + 1).padStart(2, '0')}</span>
               {item.label}
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-line p-4">
-          <p className="truncate text-sm font-medium text-ink">{user.username}</p>
-          <p className="text-xs capitalize text-muted">{roleName(user.role)}</p>
-          <button type="button" className={`${btnSecondary} mt-3 w-full`} onClick={logout}>
+        <div className="sidebar-account">
+          <div>
+            <p className="account-name">{user.username}</p>
+            <p className="account-role">{roleName(user.role)}</p>
+          </div>
+          <button type="button" className={`${btnSecondary} account-signout`} onClick={logout}>
             Sign out
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-5xl px-6 py-10 lg:px-10">
+      <main id="main-content" className="main-content">
+        <div className="content-wrap">
           <Outlet />
         </div>
       </main>
