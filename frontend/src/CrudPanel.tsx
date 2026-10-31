@@ -9,10 +9,18 @@ export function CrudPanel({
   title,
   basePath,
   fields,
+  canCreate = true,
+  canDelete = true,
+  canEdit = true,
+  readOnlyFields = [],
 }: {
   title: string
   basePath: string
   fields: FieldDef[]
+  canCreate?: boolean
+  canDelete?: boolean
+  canEdit?: boolean
+  readOnlyFields?: string[]
 }) {
   const empty = () => Object.fromEntries(fields.map((f) => [f.key, '']))
   const [rows, setRows] = useState<Row[]>([])
@@ -20,6 +28,7 @@ export function CrudPanel({
   const [editId, setEditId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [credentials, setCredentials] = useState<{ username: string; temporaryPassword: string } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -40,10 +49,18 @@ export function CrudPanel({
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    setCredentials(null)
     try {
       const body = form as Row
-      if (editId != null) await api.update(basePath, editId, { ...body, id: editId })
-      else await api.create(basePath, body)
+      if (editId != null) {
+        await api.update(basePath, editId, { ...body, id: editId })
+      } else {
+        const created = await api.create(basePath, body)
+        const account = created.credentials as
+          | { username: string; temporaryPassword: string }
+          | undefined
+        if (account) setCredentials(account)
+      }
       setEditId(null)
       setForm(empty())
       await load()
@@ -90,8 +107,8 @@ export function CrudPanel({
 
       <section className="editor-panel" aria-labelledby="editor-heading">
         <div className="editor-heading">
-          <h2 id="editor-heading">{editId != null ? `Edit record #${editId}` : 'File a new record'}</h2>
-          <span>{editId != null ? 'Editing mode' : 'New entry'}</span>
+          <h2 id="editor-heading">{editId != null ? `Edit record #${editId}` : canCreate ? 'File a new record' : canEdit ? 'Your faculty record' : 'Directory record'}</h2>
+          <span>{editId != null ? 'Editing mode' : canCreate ? 'New entry' : canEdit ? 'Personal details' : 'Read only'}</span>
         </div>
         <form onSubmit={onSubmit}>
           <div className="field-grid">
@@ -103,6 +120,7 @@ export function CrudPanel({
                   className={inputClass}
                   value={form[f.key] ?? ''}
                   required={f.required !== false}
+                  readOnly={!canEdit || readOnlyFields.includes(f.key)}
                   onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
                 />
               </label>
@@ -113,10 +131,20 @@ export function CrudPanel({
               {error}
             </p>
           )}
+          {credentials && (
+            <div className="credentials-note" role="status">
+              <strong>Login created</strong>
+              <span>Username: {credentials.username}</span>
+              <span>Temporary password: {credentials.temporaryPassword}</span>
+              <small>Save this password now. It will not be shown again.</small>
+            </div>
+          )}
           <div className="editor-actions">
-            <button type="submit" className={btnPrimary}>
-              {editId != null ? 'Save changes' : 'File record'}
-            </button>
+            {(editId != null || canCreate) && canEdit && (
+              <button type="submit" className={btnPrimary}>
+                {editId != null ? 'Save changes' : 'File record'}
+              </button>
+            )}
             {editId != null && (
               <button type="button" className={btnSecondary} onClick={cancelEdit}>
                 Cancel
@@ -155,22 +183,26 @@ export function CrudPanel({
                       </td>
                     ))}
                     <td>
-                      <button
-                        type="button"
-                        className="button button-secondary"
-                        style={{ marginRight: '.5rem', minHeight: '2rem', padding: '.35rem .6rem', fontSize: '.68rem' }}
-                        onClick={() => {
-                          setEditId(row.id!)
-                          setForm(
-                            Object.fromEntries(fields.map((f) => [f.key, String(row[f.key] ?? '')])),
-                          )
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button type="button" className={btnDanger} onClick={() => void onDelete(row.id!)}>
-                        Delete
-                      </button>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          className="button button-secondary"
+                          style={{ marginRight: '.5rem', minHeight: '2rem', padding: '.35rem .6rem', fontSize: '.68rem' }}
+                          onClick={() => {
+                            setEditId(row.id!)
+                            setForm(
+                              Object.fromEntries(fields.map((f) => [f.key, String(row[f.key] ?? '')])),
+                            )
+                          }}
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button type="button" className={btnDanger} onClick={() => void onDelete(row.id!)}>
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

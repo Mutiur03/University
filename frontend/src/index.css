@@ -249,12 +249,36 @@ input:focus-visible {
 }
 
 .auth-error,
-.panel-error {
+.panel-error,
+.credentials-note {
   border-left: 3px solid #b0463d;
   padding: .75rem 1rem;
   background: #f8ddd8;
   color: #733027;
   font-size: .85rem;
+}
+
+.credentials-note {
+  display: grid;
+  gap: .3rem;
+  border-left-color: #607d2b;
+  background: #eef4d8;
+  color: #304216;
+}
+
+.credentials-note strong {
+  font-size: .9rem;
+}
+
+.credentials-note span {
+  font-family: var(--font-mono);
+  font-size: .78rem;
+}
+
+.credentials-note small {
+  margin-top: .25rem;
+  color: #687678;
+  font-size: .75rem;
 }
 
 .demo-note {

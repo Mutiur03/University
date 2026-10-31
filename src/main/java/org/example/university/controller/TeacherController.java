@@ -2,8 +2,12 @@ package org.example.university.controller;
 
 import java.util.List;
 import org.example.university.model.Teacher;
+import org.example.university.model.Role;
 import org.example.university.repository.TeacherRepository;
+import org.example.university.security.AccountProvisioningService;
+import org.example.university.security.AccountProvisioningService.Credentials;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/api/teachers")
@@ -22,43 +27,81 @@ import org.springframework.web.server.ResponseStatusException;
 public class TeacherController {
 
     private final TeacherRepository teacherRepository;
+    private final AccountProvisioningService accounts;
 
-    public TeacherController(TeacherRepository teacherRepository) {
+    public TeacherController(TeacherRepository teacherRepository, AccountProvisioningService accounts) {
         this.teacherRepository = teacherRepository;
+        this.accounts = accounts;
     }
 
     @GetMapping
-    public List<Teacher> findAll() {
+    public List<Teacher> findAll(Authentication authentication) {
+        if (isTeacher(authentication)) {
+            return teacherRepository.findByEmail(authentication.getName()).stream().toList();
+        }
         return teacherRepository.findAll();
     }
 
     @GetMapping("/{id}")
-    public Teacher findById(@PathVariable Long id) {
-        return teacherRepository.findById(id)
+    public Teacher findById(@PathVariable Long id, Authentication authentication) {
+        Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (isTeacher(authentication) && !teacher.getEmail().equals(authentication.getName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        return teacher;
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
-    public Teacher create(@RequestBody Teacher teacher) {
-        return teacherRepository.save(teacher);
+    @Transactional
+    public CreateTeacherResponse create(@RequestBody Teacher teacher) {
+        Credentials credentials = accounts.create(teacher.getEmail(), Role.ROLE_TEACHER);
+        try {
+            Teacher saved = teacherRepository.save(teacher);
+            return new CreateTeacherResponse(saved, credentials);
+        } catch (RuntimeException exception) {
+            accounts.delete(teacher.getEmail());
+            throw exception;
+        }
     }
 
     @PutMapping("/{id}")
-    public Teacher update(@PathVariable Long id, @RequestBody Teacher teacher) {
-        if (!teacherRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @Transactional
+    public Teacher update(@PathVariable Long id, @RequestBody Teacher teacher, Authentication authentication) {
+        Teacher existing = teacherRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (isTeacher(authentication)) {
+            if (!existing.getEmail().equals(authentication.getName())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+            if (!existing.getEmail().equals(teacher.getEmail())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email cannot be changed here");
+            }
+        } else {
+            accounts.rename(existing.getEmail(), teacher.getEmail());
         }
         teacher.setId(id);
         return teacherRepository.save(teacher);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
     public void delete(@PathVariable Long id) {
-        if (!teacherRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+        Teacher existing = teacherRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         teacherRepository.deleteById(id);
+        accounts.delete(existing.getEmail());
+    }
+
+    public record CreateTeacherResponse(Teacher teacher, Credentials credentials) {}
+
+    private boolean isTeacher(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_TEACHER"));
     }
 }

@@ -14,7 +14,7 @@ const personFields = [
 const nav: { to: string; label: string; roles: Role[] }[] = [
   { to: '/admins', label: 'Administrators', roles: ['ROLE_ADMIN'] },
   { to: '/teachers', label: 'Faculty', roles: ['ROLE_ADMIN', 'ROLE_TEACHER'] },
-  { to: '/students', label: 'Students', roles: ['ROLE_ADMIN', 'ROLE_STUDENT'] },
+  { to: '/students', label: 'Students', roles: ['ROLE_ADMIN', 'ROLE_TEACHER', 'ROLE_STUDENT'] },
 ]
 
 function roleName(role: Role) {
@@ -107,11 +107,42 @@ function Login() {
           </form>
 
           <p className="demo-note">
-            Demo: admin / admin123 · teacher / teacher123 · student / student123
+            Demo administrator: admin / admin123
           </p>
         </div>
       </div>
     </div>
+  )
+}
+
+function TeacherDirectory() {
+  const { user } = useAuth()
+  const isTeacher = user?.role === 'ROLE_TEACHER'
+  return (
+    <CrudPanel
+      title="Faculty"
+      basePath="/api/teachers"
+      fields={[...personFields, { key: 'department', label: 'Department', required: false }]}
+      canCreate={!isTeacher}
+      canDelete={!isTeacher}
+      readOnlyFields={isTeacher ? ['email'] : []}
+    />
+  )
+}
+
+function StudentDirectory() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'ROLE_ADMIN'
+  const canEdit = isAdmin
+  return (
+    <CrudPanel
+      title="Students"
+      basePath="/api/students"
+      fields={[...personFields, { key: 'major', label: 'Major', required: false }]}
+      canCreate={isAdmin}
+      canDelete={isAdmin}
+      canEdit={canEdit}
+    />
   )
 }
 
@@ -182,21 +213,13 @@ export default function App() {
         <Route
           path="/teachers"
           element={
-            <CrudPanel
-              title="Faculty"
-              basePath="/api/teachers"
-              fields={[...personFields, { key: 'department', label: 'Department', required: false }]}
-            />
+            <TeacherDirectory />
           }
         />
         <Route
           path="/students"
           element={
-            <CrudPanel
-              title="Students"
-              basePath="/api/students"
-              fields={[...personFields, { key: 'major', label: 'Major', required: false }]}
-            />
+            <StudentDirectory />
           }
         />
       </Route>
