@@ -1,18 +1,17 @@
 package org.example.university.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import org.springframework.http.HttpStatus;
+import org.example.university.security.JwtAuth;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -20,31 +19,32 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
+    private final JwtAuth jwtAuth;
 
-    public AuthController(AuthenticationManager authenticationManager) {
+    public AuthController(AuthenticationManager authenticationManager, JwtAuth jwtAuth) {
         this.authenticationManager = authenticationManager;
+        this.jwtAuth = jwtAuth;
     }
 
-    @PostMapping("/login")
-    public Map<String, String> login(@RequestBody Map<String, String> body, HttpServletRequest request) {
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(body.get("username"), body.get("password")));
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        HttpSession session = request.getSession(true);
-        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                SecurityContextHolder.getContext());
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public Map<String, String> me() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return Map.of(
-                "username", body.get("username"),
+                "username", auth.getName(),
                 "role", auth.getAuthorities().iterator().next().getAuthority());
     }
 
-    @PostMapping("/logout")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void logout(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
-        SecurityContextHolder.clearContext();
+    @PostMapping("/login")
+    public Map<String, String> login(@RequestBody Map<String, String> body) {
+        String username = body.get("username");
+        String password = body.get("password");
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password));
+        Map<String, String> response = new LinkedHashMap<>();
+        response.put("username", username);
+        response.put("role", auth.getAuthorities().iterator().next().getAuthority());
+        response.put("accessToken", jwtAuth.createToken(auth));
+        return response;
     }
 }

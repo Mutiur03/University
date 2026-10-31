@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
+  --color-surface: #f4f1ea;
+  --color-ink: #1a1814;
+  --color-muted: #5c564d;
+  --color-line: #d9d2c6;
+  --color-brand: #1e3a5f;
+  --color-brand-hover: #2a4f7a;
+  --color-accent: #b45309;
+}
+
+html {
+  @apply antialiased;
+}
+
+body {
+  @apply bg-surface text-ink font-sans;
+}

@@ -2,19 +2,8 @@ services:
   postgres:
     image: postgres:17
     environment:
-      POSTGRES_DB: mydatabase
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: db
+      POSTGRES_USER: Mutiur
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5434:5432"
-
-  app:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mydatabase
-      SPRING_DATASOURCE_USERNAME: myuser
-      SPRING_DATASOURCE_PASSWORD: secret
-    depends_on:
-      - postgres
