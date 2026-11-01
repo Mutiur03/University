@@ -293,15 +293,20 @@ input:focus-visible {
 
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   background: #f2efe7;
 }
 
 .sidebar {
   display: flex;
+  box-sizing: border-box;
   width: 17rem;
   flex-shrink: 0;
   flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
   background: #172126;
   color: #f8f6ee;
 }
@@ -390,13 +395,15 @@ input:focus-visible {
 
 .account-signout:hover {
   border-color: #c8f05a;
+  background: #24343a;
   color: #f8f6ee;
 }
 
 .main-content {
   min-width: 0;
   flex: 1;
-  overflow: auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .content-wrap {
@@ -413,6 +420,10 @@ input:focus-visible {
   gap: 2rem;
   border-bottom: 1px solid #c9d0ca;
   padding-bottom: 2rem;
+}
+
+.page-header .eyebrow {
+  color: #607d18;
 }
 
 .page-title {
@@ -504,6 +515,71 @@ input:focus-visible {
   background: #fbfaf6;
 }
 
+.profile-panel {
+  margin-top: 2rem;
+  border-top: 4px solid #c8f05a;
+  padding: 2rem;
+  background: #fbfaf6;
+}
+
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.profile-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 1px solid rgba(200, 240, 90, .45);
+  border-radius: 50%;
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+}
+
+.profile-identity h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 400;
+  letter-spacing: -.04em;
+}
+
+.profile-identity span {
+  color: #687678;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  text-transform: uppercase;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.profile-field {
+  border-top: 1px solid #d8d2c0;
+  padding-top: .6rem;
+}
+
+.profile-field dt {
+  color: #687678;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.profile-field dd {
+  margin: .35rem 0 0;
+  font-size: 1.05rem;
+}
+
 .table-scroll {
   overflow-x: auto;
 }
@@ -561,10 +637,14 @@ input:focus-visible {
 @media (max-width: 700px) {
   .app-shell {
     display: block;
+    height: auto;
+    overflow: visible;
   }
 
   .sidebar {
     width: auto;
+    height: auto;
+    overflow: visible;
   }
 
   .sidebar-brand {

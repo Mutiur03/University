@@ -12,7 +12,7 @@ export function CrudPanel({
   canCreate = true,
   canDelete = true,
   canEdit = true,
-  readOnlyFields = [],
+  ownProfile = false,
 }: {
   title: string
   basePath: string
@@ -20,7 +20,7 @@ export function CrudPanel({
   canCreate?: boolean
   canDelete?: boolean
   canEdit?: boolean
-  readOnlyFields?: string[]
+  ownProfile?: boolean
 }) {
   const empty = () => Object.fromEntries(fields.map((f) => [f.key, '']))
   const [rows, setRows] = useState<Row[]>([])
@@ -105,10 +105,11 @@ export function CrudPanel({
         </div>
       </header>
 
+      {(canCreate || canEdit) && (
       <section className="editor-panel" aria-labelledby="editor-heading">
         <div className="editor-heading">
-          <h2 id="editor-heading">{editId != null ? `Edit record #${editId}` : canCreate ? 'File a new record' : canEdit ? 'Your faculty record' : 'Directory record'}</h2>
-          <span>{editId != null ? 'Editing mode' : canCreate ? 'New entry' : canEdit ? 'Personal details' : 'Read only'}</span>
+          <h2 id="editor-heading">{editId != null ? `Edit record #${editId}` : canCreate ? 'File a new record' : 'Your faculty record'}</h2>
+          <span>{editId != null ? 'Editing mode' : canCreate ? 'New entry' : 'Personal details'}</span>
         </div>
         <form onSubmit={onSubmit}>
           <div className="field-grid">
@@ -120,7 +121,7 @@ export function CrudPanel({
                   className={inputClass}
                   value={form[f.key] ?? ''}
                   required={f.required !== false}
-                  readOnly={!canEdit || readOnlyFields.includes(f.key)}
+                  readOnly={!canEdit}
                   onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
                 />
               </label>
@@ -153,7 +154,41 @@ export function CrudPanel({
           </div>
         </form>
       </section>
+      )}
 
+      {ownProfile ? (
+        <section className="profile-panel" aria-label={`${title} profile`}>
+          {loading ? (
+            <p className="empty-state">Loading profile…</p>
+          ) : rows.length === 0 ? (
+            <p className="empty-state">No record on file.</p>
+          ) : (
+            (() => {
+              const row = rows[0]
+              const initial = String(row[fields[0]?.key] ?? '?').charAt(0).toUpperCase()
+              return (
+                <>
+                  <div className="profile-identity">
+                    <div className="profile-avatar">{initial}</div>
+                    <div>
+                      <h2>{fields.slice(0, 2).map((f) => row[f.key]).filter(Boolean).join(' ') || title}</h2>
+                      <span>Record #{row.id}</span>
+                    </div>
+                  </div>
+                  <dl className="profile-grid">
+                    {fields.map((f) => (
+                      <div key={f.key} className="profile-field">
+                        <dt>{f.label}</dt>
+                        <dd>{String(row[f.key] ?? '') || '—'}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </>
+              )
+            })()
+          )}
+        </section>
+      ) : (
       <section className="table-panel" aria-label={`${title} records`}>
         {loading ? (
           <p className="empty-state">Loading records…</p>
@@ -170,7 +205,7 @@ export function CrudPanel({
                       {f.label}
                     </th>
                   ))}
-                  <th scope="col">Actions</th>
+                  {(canEdit || canDelete) && <th scope="col">Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -182,6 +217,7 @@ export function CrudPanel({
                         {String(row[f.key] ?? '') || '—'}
                       </td>
                     ))}
+                    {(canEdit || canDelete) && (
                     <td>
                       {canEdit && (
                         <button
@@ -204,6 +240,7 @@ export function CrudPanel({
                         </button>
                       )}
                     </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -211,6 +248,7 @@ export function CrudPanel({
           </div>
         )}
       </section>
+      )}
     </div>
   )
 }

@@ -68,21 +68,12 @@ public class TeacherController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public Teacher update(@PathVariable Long id, @RequestBody Teacher teacher, Authentication authentication) {
+    public Teacher update(@PathVariable Long id, @RequestBody Teacher teacher) {
         Teacher existing = teacherRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (isTeacher(authentication)) {
-            if (!existing.getEmail().equals(authentication.getName())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-            }
-            if (!existing.getEmail().equals(teacher.getEmail())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email cannot be changed here");
-            }
-        } else {
-            accounts.rename(existing.getEmail(), teacher.getEmail());
-        }
+        accounts.rename(existing.getEmail(), teacher.getEmail());
         teacher.setId(id);
         return teacherRepository.save(teacher);
     }

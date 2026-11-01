@@ -117,15 +117,15 @@ function Login() {
 
 function TeacherDirectory() {
   const { user } = useAuth()
-  const isTeacher = user?.role === 'ROLE_TEACHER'
+  const isAdmin = user?.role === 'ROLE_ADMIN'
   return (
     <CrudPanel
       title="Faculty"
       basePath="/api/teachers"
       fields={[...personFields, { key: 'department', label: 'Department', required: false }]}
-      canCreate={!isTeacher}
-      canDelete={!isTeacher}
-      readOnlyFields={isTeacher ? ['email'] : []}
+      canCreate={isAdmin}
+      canDelete={isAdmin}
+      canEdit={isAdmin}
     />
   )
 }
@@ -133,7 +133,7 @@ function TeacherDirectory() {
 function StudentDirectory() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'ROLE_ADMIN'
-  const canEdit = isAdmin
+  const isStudent = user?.role === 'ROLE_STUDENT'
   return (
     <CrudPanel
       title="Students"
@@ -141,7 +141,8 @@ function StudentDirectory() {
       fields={[...personFields, { key: 'major', label: 'Major', required: false }]}
       canCreate={isAdmin}
       canDelete={isAdmin}
-      canEdit={canEdit}
+      canEdit={isAdmin}
+      ownProfile={isStudent}
     />
   )
 }
